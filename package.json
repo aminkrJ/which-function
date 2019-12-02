@@ -1,0 +1,17 @@
+{
+  "name": "which-function",
+  "version": "1.0.0",
+  "description": "",
+  "main": "test.js",
+  "scripts": {
+    "test": "node --inspect-brk ./node_modules/jest/bin/jest.js --watch --runInBand"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "precinct": "^6.2.0"
+  },
+  "devDependencies": {
+    "jest": "^24.9.0"
+  }
+}
