@@ -2,7 +2,7 @@
   "name": "which-function",
   "version": "1.0.0",
   "description": "",
-  "main": "test.js",
+  "main": "index.js",
   "scripts": {
     "test": "node --inspect-brk ./node_modules/jest/bin/jest.js --watch --runInBand"
   },
