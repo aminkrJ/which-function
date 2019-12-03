@@ -3,29 +3,32 @@ var path = require('path')
 var precinct = require('precinct')
 var cgf = require('changed-git-files')
 
-function ModifiedFunctions(dirname, extname = 'js', entryPath = './index') {
+function WhichFunctions(dirname) {
   this.dirname = dirname
-  this.entryPath = entryPath
-  this.extname = extname
 }
 
-ModifiedFunctions.prototype._buildPath = function(p){
-  if(path.extname(p) === '') {
-    p = `${p}.${this.extname}`
+WhichFunctions.prototype.genAbsolutePath = function(absPath) {
+  if(path.extname(absPath) === '') {
+    absPath = `${absPath}.js`
   }
-  return path.resolve(this.dirname, p)
+  if(!path.isAbsolute(absPath)){
+    absPath = path.resolve(process.cwd(), this.dirname, absPath)
+  }
+  return absPath
 }
 
-ModifiedFunctions.prototype._read = function(p){
-  return fs.readFileSync(this._buildPath(p), 'utf8')
+// path relative to process cwd
+WhichFunctions.prototype.readFileSync = function(absPath){
+  absPath = this.genAbsolutePath(absPath)
+  return fs.readFileSync(absPath, 'utf8')
 }
 
-ModifiedFunctions.prototype.shallowDeps = function(p) {
-  return precinct(this._read(p))
-}
+WhichFunctions.prototype.shallowDeps = function(absPath) {
+  const context = this.readFileSync(absPath)
+  return precinct(context) }
 
-ModifiedFunctions.prototype.deepDeps = function(p) {
-  var stack = [p]
+WhichFunctions.prototype.deepDeps = function(absPath) {
+  var stack = [absPath]
   var deps = []
   while(stack.length > 0) {
     var curPath = stack.pop()
@@ -38,8 +41,14 @@ ModifiedFunctions.prototype.deepDeps = function(p) {
   return deps
 }
 
-ModifiedFunctions.prototype.reverseKey = function(p) {
-  var functions = this.shallowDeps(p)
+WhichFunctions.prototype.genKey = function(absPath) {
+  absPath = this.genAbsolutePath(absPath)
+  const cwd  = process.cwd()
+  return absPath.substring(cwd.length + 1)
+}
+
+WhichFunctions.prototype.reverseKey = function(absPath) {
+  var functions = this.shallowDeps(absPath)
   var dataSource = {}
 
   functions.forEach((func) => {
@@ -47,7 +56,7 @@ ModifiedFunctions.prototype.reverseKey = function(p) {
 
     deps.forEach((dep) => {
       if(dataSource[dep] === undefined){
-        dataSource[dep] = [func]
+        dataSource[this.genKey(dep)] = [func]
       }
     })
   })
@@ -55,21 +64,20 @@ ModifiedFunctions.prototype.reverseKey = function(p) {
   return dataSource
 }
 
-ModifiedFunctions.prototype.run = function(callback) {
-  let modifiedFunctions = []
-  const deps = this.reverseKey(this.entryPath)
-  // functions are depending on themselves
-  const functions = this.shallowDeps(this.entryPath)
-  functions.forEach((func) => deps[func] = [func])
+WhichFunctions.prototype.run = function(absPath, callback) {
+  let whichFuncs = []
+  const deps = this.reverseKey(absPath)
+  const functions = this.shallowDeps(absPath)
+  functions.forEach((func) => deps[this.genKey(func)] = [func])
   cgf((err, changed) => {
     for(file of changed) {
       var touched = deps[file.filename]
       if(touched !== undefined) {
-        modifiedFunctions = modifiedFunctions.concat(touched)
+        whichFuncs = whichFuncs.concat(touched)
       }
     }
-    callback(modifiedFunctions)
+    callback(whichFuncs)
   })
 }
 
-module.exports = ModifiedFunctions
+module.exports = WhichFunctions

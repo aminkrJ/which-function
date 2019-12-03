@@ -2,60 +2,67 @@ jest.mock('changed-git-files')
 
 const path = require('path')
 const cgf = require("changed-git-files")
-const ModifiedFunctions = require('../index')
+const WhichFunctions = require('../index')
+const wf = new WhichFunctions('tests')
 
-const modified = new ModifiedFunctions('tests', 'js', './entry.js')
-const entryPath = './entry.js'
+describe('readFileSync', () => {
+  it('reads relative path in root', () => {
+    expect(wf.readFileSync('./a')).toMatch(/function a/)
+  })
 
-/**
- * entry
- *   |
- *     -- a
- *     -- b
- *     |
- *       -- c
- *       -- /f/d
- *
- */
+  it('reads relative path in sub dir', () => {
+    expect(wf.readFileSync('./f/d.js')).toMatch(/function d/)
+  })
+
+  it('reads absolute path in sub dir', () => {
+    expect(wf.readFileSync(path.resolve('tests', './f/d'))).toMatch(/function d/)
+  })
+})
 
 describe('shallowDeps', () => {
-  test('file name is can be without extension', () => {
-    expect(modified.shallowDeps(entryPath)).toEqual(['./a.js', './b'])
+  it('shallow dependencies for a given file', () => {
+    expect(wf.shallowDeps('./entry.js')).toEqual(['./a.js', './b'])
   })
 })
 
 describe('deepDeps', () => {
-  test('resolve folders', () => {
-    expect(modified.deepDeps(entryPath)).toEqual(['./a.js', './b', './c', './f/d'])
+  it('deep dependencies for a given file', () => {
+    expect(wf.deepDeps('./entry')).toEqual(['./a.js', './b', './c', './f/d'])
   })
 })
 
 describe('reverseKey', () => {
+  it('functions with common dependencies', () => {
+    expect(wf.reverseKey('./entry')).toEqual({
+      'tests/c.js': ['./b'],
+      'tests/f/d.js': ['./b']
+    })
+  })
 })
 
 describe('run', () => {
-  test('returns functions that has dependency changes', done => {
+  it('returns functions that has dependency changes', done => {
     const changedFiles = [
-      {filename: './c'},
+      {filename: 'tests/c.js'},
     ]
     const callback = (functions) => {
       expect(functions).toEqual(['./b'])
       done()
     }
     cgf.mockImplementation((func) => func(null, changedFiles))
-    modified.run(callback)
+    wf.run('./entry.js', callback)
   })
 
-  test('returns functions that has changed themselves', done => {
+  it('returns functions that has changed themselves', done => {
     const changedFiles = [
-      {filename: './f/d'},
-      {filename: './a.js'}
+      {filename: 'tests/f/d.js'},
+      {filename: 'tests/a.js'}
     ]
     const callback = (functions) => {
       expect(functions).toEqual(['./b', './a.js'])
       done()
     }
     cgf.mockImplementation((func) => func(null, changedFiles))
-    modified.run(callback)
+    wf.run('./entry.js', callback)
   })
 })
