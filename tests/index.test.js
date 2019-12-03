@@ -1,5 +1,11 @@
+jest.mock('changed-git-files')
+
 const path = require('path')
-const {shallowDeps, deepDeps, reverseKey} = require('../index')
+const cgf = require("changed-git-files")
+const ModifiedFunctions = require('../index')
+
+const modified = new ModifiedFunctions('tests', 'js', './entry.js')
+const entryPath = './entry.js'
 
 /**
  * entry
@@ -14,20 +20,42 @@ const {shallowDeps, deepDeps, reverseKey} = require('../index')
 
 describe('shallowDeps', () => {
   test('file name is can be without extension', () => {
-    const absPath = path.resolve(__dirname, './entry.js')
-    expect(shallowDeps(absPath)).toEqual(['./a.js', './b'].map(p => path.resolve(__dirname, p)))
+    expect(modified.shallowDeps(entryPath)).toEqual(['./a.js', './b'])
   })
 })
 
 describe('deepDeps', () => {
   test('resolve folders', () => {
-    const absPath = path.resolve(__dirname, './entry.js')
-    expect(deepDeps(absPath)).toEqual(['./a.js', './b', './c', './f/d'].map(p => path.resolve(__dirname, p)))
+    expect(modified.deepDeps(entryPath)).toEqual(['./a.js', './b', './c', './f/d'])
   })
 })
 
 describe('reverseKey', () => {
-  test('resolve folders', () => {
-    const absPath = path.resolve(__dirname, './entry.js')
+})
+
+describe('run', () => {
+  test('returns functions that has dependency changes', done => {
+    const changedFiles = [
+      {filename: './c'},
+    ]
+    const callback = (functions) => {
+      expect(functions).toEqual(['./b'])
+      done()
+    }
+    cgf.mockImplementation((func) => func(null, changedFiles))
+    modified.run(callback)
+  })
+
+  test('returns functions that has changed themselves', done => {
+    const changedFiles = [
+      {filename: './f/d'},
+      {filename: './a.js'}
+    ]
+    const callback = (functions) => {
+      expect(functions).toEqual(['./b', './a.js'])
+      done()
+    }
+    cgf.mockImplementation((func) => func(null, changedFiles))
+    modified.run(callback)
   })
 })
