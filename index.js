@@ -41,7 +41,7 @@ WhichFunctions.prototype.deepDeps = function(absPath) {
   return deps
 }
 
-WhichFunctions.prototype.genKey = function(absPath) {
+WhichFunctions.prototype.genRelativeToRoot = function(absPath) {
   absPath = this.genAbsolutePath(absPath)
   const cwd  = process.cwd()
   return absPath.substring(cwd.length + 1)
@@ -56,7 +56,7 @@ WhichFunctions.prototype.reverseKey = function(absPath) {
 
     deps.forEach((dep) => {
       if(dataSource[dep] === undefined){
-        dataSource[this.genKey(dep)] = [func]
+        dataSource[this.genRelativeToRoot(dep)] = [func]
       }
     })
   })
@@ -68,12 +68,12 @@ WhichFunctions.prototype.run = function(absPath, callback) {
   let whichFuncs = []
   const deps = this.reverseKey(absPath)
   const functions = this.shallowDeps(absPath)
-  functions.forEach((func) => deps[this.genKey(func)] = [func])
+  functions.forEach((func) => deps[this.genRelativeToRoot(func)] = [func])
   cgf((err, changed) => {
     for(file of changed) {
       var touched = deps[file.filename]
       if(touched !== undefined) {
-        whichFuncs = whichFuncs.concat(touched)
+        whichFuncs = whichFuncs.concat(touched.map((p) => this.genRelativeToRoot(p)))
       }
     }
     callback(whichFuncs)

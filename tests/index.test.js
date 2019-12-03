@@ -46,7 +46,7 @@ describe('run', () => {
       {filename: 'tests/c.js'},
     ]
     const callback = (functions) => {
-      expect(functions).toEqual(['./b'])
+      expect(functions).toEqual(['tests/b.js'])
       done()
     }
     cgf.mockImplementation((func) => func(null, changedFiles))
@@ -59,7 +59,7 @@ describe('run', () => {
       {filename: 'tests/a.js'}
     ]
     const callback = (functions) => {
-      expect(functions).toEqual(['./b', './a.js'])
+      expect(functions).toEqual(['tests/b.js', 'tests/a.js'])
       done()
     }
     cgf.mockImplementation((func) => func(null, changedFiles))
