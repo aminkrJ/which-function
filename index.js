@@ -24,8 +24,14 @@ WhichFunctions.prototype.readFileSync = function(absPath){
 }
 
 WhichFunctions.prototype.shallowDeps = function(absPath) {
-  const context = this.readFileSync(absPath)
-  return precinct(context) }
+  let context = []
+  try{
+    context = this.readFileSync(absPath)
+  }catch(err){
+    return context
+  }
+  return precinct(context)
+}
 
 WhichFunctions.prototype.deepDeps = function(absPath) {
   var stack = [absPath]
