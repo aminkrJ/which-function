@@ -2,8 +2,8 @@ jest.mock('changed-git-files')
 
 const path = require('path')
 const cgf = require("changed-git-files")
-const WhichFunctions = require('../index')
-const wf = new WhichFunctions('tests')
+const WhichFunction = require('../index')
+const wf = new WhichFunction('tests')
 
 describe('readFileSync', () => {
   it('reads relative path in root', () => {

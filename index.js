@@ -1,13 +1,14 @@
 var fs = require('fs')
-var path = require('path')
-var precinct = require('precinct')
-var cgf = require('changed-git-files')
+const path = require('path')
+const precinct = require('precinct')
+const cgf = require('changed-git-files')
+const FirebaseFunction = require('./firebase')
 
-function WhichFunctions(dirname) {
+function WhichFunction(dirname) {
   this.dirname = dirname
 }
 
-WhichFunctions.prototype.genAbsolutePath = function(absPath) {
+WhichFunction.prototype.genAbsolutePath = function(absPath) {
   if(path.extname(absPath) === '') {
     absPath = `${absPath}.js`
   }
@@ -18,12 +19,12 @@ WhichFunctions.prototype.genAbsolutePath = function(absPath) {
 }
 
 // path relative to process cwd
-WhichFunctions.prototype.readFileSync = function(absPath){
+WhichFunction.prototype.readFileSync = function(absPath){
   absPath = this.genAbsolutePath(absPath)
   return fs.readFileSync(absPath, 'utf8')
 }
 
-WhichFunctions.prototype.shallowDeps = function(absPath) {
+WhichFunction.prototype.shallowDeps = function(absPath) {
   let context = []
   try{
     context = this.readFileSync(absPath)
@@ -33,7 +34,7 @@ WhichFunctions.prototype.shallowDeps = function(absPath) {
   return precinct(context)
 }
 
-WhichFunctions.prototype.deepDeps = function(absPath) {
+WhichFunction.prototype.deepDeps = function(absPath) {
   var stack = [absPath]
   var deps = []
   while(stack.length > 0) {
@@ -47,13 +48,13 @@ WhichFunctions.prototype.deepDeps = function(absPath) {
   return deps
 }
 
-WhichFunctions.prototype.genRelativeToRoot = function(absPath) {
+WhichFunction.prototype.genRelativeToRoot = function(absPath) {
   absPath = this.genAbsolutePath(absPath)
   const cwd  = process.cwd()
   return absPath.substring(cwd.length + 1)
 }
 
-WhichFunctions.prototype.reverseKey = function(absPath) {
+WhichFunction.prototype.reverseKey = function(absPath) {
   var functions = this.shallowDeps(absPath)
   var dataSource = {}
 
@@ -70,7 +71,7 @@ WhichFunctions.prototype.reverseKey = function(absPath) {
   return dataSource
 }
 
-WhichFunctions.prototype.run = function(absPath, callback) {
+WhichFunction.prototype.run = function(absPath, callback) {
   let whichFuncs = []
   const deps = this.reverseKey(absPath)
   const functions = this.shallowDeps(absPath)
@@ -86,4 +87,4 @@ WhichFunctions.prototype.run = function(absPath, callback) {
   })
 }
 
-module.exports = WhichFunctions
+module.exports = { WhichFunction, FirebaseFunction }
