@@ -19,7 +19,7 @@ module.exports = (absPath, modified) => {
       writeStream.write(`${line}\r\n`)
     }
   }).on("close", function(){
-    fs.createReadStream().pipe(fs.createWriteStream(absPath))
+    fs.createReadStream('./tmp').pipe(fs.createWriteStream(absPath))
     fs.unlinkSync('./tmp')
   })
 }
