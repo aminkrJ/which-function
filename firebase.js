@@ -10,9 +10,11 @@ module.exports = (absPath, modified) => {
   rl.on("line", function(line) {
     if(line.match(pattern)){
       if(modified.length === 0) {
-        const reg = new RegExp(pattern, )
-        const transformedLine = line.replace(/firebase deploy --only functions\S*/, pattern)
-        writeStream.write(`${transformedLine}\r\n`)
+        const splited = line.split('&&')
+        const reg = new RegExp(pattern)
+        const notMatched = splited.find((s) => !Array.isArray(s.match(reg)))
+        const lineWithoutPattern = notMatched.join('&&')
+        writeStream.write(`${lineWithoutPattern}\r\n`)
       } else {
         const funcNames = modified.reduce((acc, f) => {
           const basename = path.basename(f, '.js')
